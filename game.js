@@ -1,5 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+const score = document.getElementById('score');
+
 const SHIP_SIZE = 25;
 const TURN_SPEED = 360;
 const FPS = 50;
@@ -7,10 +9,10 @@ const SHIP_SPEED = 3;
 const FRICTION = 0.9;
 const ASTEROID_SPEED = 3;
 const MIN_ASTEROID_SPEED = 2;
+const MAX_ASTEROID_COUNT = 20;
 const RADIUS = 20;
 const MIN_RADIUS = 20;
 const COLLISION_BORDER = 1;
-
 
 class Ship {
     constructor() {
@@ -22,9 +24,10 @@ class Ship {
         this.movement = false;
         this.move.x = 0;
         this.move.y = 0;
+        this.color = "white";
     }
     draw() {
-        ctx.strokeStyle = "white";
+        ctx.strokeStyle = this.color;
         ctx.lineWidth = SHIP_SIZE / 20;
         ctx.beginPath();
         ctx.moveTo(
@@ -81,7 +84,6 @@ class Ship {
     }
 
     keyDown(key) {
-        console.log(key)
         switch (key) {
             case 'ArrowLeft':
                 this.rotation = TURN_SPEED / 180 * Math.PI / FPS;
@@ -128,14 +130,16 @@ class Asteroid {
 
     draw() {
         ctx.beginPath();
-        ctx.strokeStyle = this.color
+        ctx.strokeStyle = this.color;
         ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
         ctx.stroke();
         ctx.closePath();
     }
     move() {
-        this.y += Math.cos(this.angle) * (10 * this.speed / FPS);
-        this.x += Math.sin(this.angle) * (10 * this.speed / FPS);
+        if (!game.isGameOver) {
+            this.y += Math.cos(this.angle) * (10 * this.speed / FPS);
+            this.x += Math.sin(this.angle) * (10 * this.speed / FPS);
+        }
     }
 }
 
@@ -156,6 +160,8 @@ function detectCollisionBorder(asteroid) {
 class Game {
     constructor() {
         this.asteroids = [];
+        this.score = 0;
+        this.isGameOver = false;
     }
     createShip() {
         //this.ship = new Ship();
@@ -194,7 +200,6 @@ class Game {
         this.asteroids.push(new Asteroid(x, y, radius, speed, angle));
     }
 
-
     drawPlayground() {
         //Vykreslení pozadí        
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -202,13 +207,9 @@ class Game {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     move() {
-        /*
-        console.log('Game.move '+this.asteroids.length);      
-        this.asteroids.forEach(function(obj, index, arr){
-            obj.move();
-        });
-        */
-        ship.move();
+        if (!game.isGameOver) {
+            ship.move();
+        }
     }
     draw() {
         this.drawPlayground();
@@ -216,36 +217,63 @@ class Game {
             obj.move();
             obj.draw();
             if (detectCollision(obj, ship)) {
-                arr.splice(arr.indexOf(obj), 1);
+                /*arr.splice(arr.indexOf(obj), 1);*/
+                obj.color = "red";
+                ship.color = "red";
+                game.gameOver();
             } else
                 if (detectCollisionBorder(obj)) {
                     arr.splice(arr.indexOf(obj), 1);
                 }
         });
         ship.draw();
+
+    }
+    check() {
+        if (this.asteroids.length < MAX_ASTEROID_COUNT) {
+            switch (Math.ceil(Math.random() * 4)) {
+                case 1: { this.addTopAsteroid(); break; }
+                case 2: { this.addTopAsteroidLeft(); break; }
+                case 3: { this.addTopAsteroidBottom(); break; }
+                case 4: { this.addTopAsteroidRight(); break; }
+            }
+        }
+    }
+    count() {        
+        if (game.isGameOver) {
+            score.innerText = game.score + '. GAME OVER! Press <F5> to continue';
+        } else {
+            game.score++;  
+            score.innerText = game.score;
+        };
     }
     setup() {
         this.createShip();
-        for (let i = 10; i > 0; i--) {
-            this.addTopAsteroid();
-            this.addTopAsteroidLeft();
-            this.addTopAsteroidBottom();
-            this.addTopAsteroidRight();
-        }
+        this.check();
         this.draw();
+        setInterval(this.count, 1000);
         setInterval(this.move, 1000 / FPS);
+        setInterval(function () { game.check(); }, 1000);
         document.addEventListener('keydown', this.keyDown);
         document.addEventListener('keyup', this.keyUp);
     }
+    gameOver() {
+        this.draw();
+        this.isGameOver = true;
+        console.log('Game Over');
+    }
     play() {
-        console.log('play');
         this.move();
     };
     keyDown(ev) {
-        ship.keyDown(ev.key);
+        if (!game.isGameOver) {
+            ship.keyDown(ev.key);
+        }
     }
     keyUp(ev) {
-        ship.keyUp(ev.key);
+        if (!game.isGameOver) {
+            ship.keyUp(ev.key);
+        }
     }
 }
 let game = new Game();
