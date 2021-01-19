@@ -100,6 +100,63 @@ function sketch() {
     } else if (ship.y > canvas.height + ship.size) {
         ship.y = 0 - ship.size;
     }
+    game.draw();
 };
 
-sketch();
+class Asteroid{
+    static FILL_COLOR = 'white';
+    constructor(x, y, radius=10, speed=2, angle=0){
+        this.x = x;
+        this.y = y;
+        this.radius = radius;    
+        this.speed = speed; 
+        this.color = Asteroid.FILL_COLOR;
+        this.angle = angle
+    }
+
+    draw(){
+        ctx.beginPath();
+        ctx.strokeStyle = this.color
+        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.closePath();
+        console.log(this.x, this.y, this.radius, 0, 2 * Math.PI);
+    }
+}
+
+class Game{
+    constructor(){
+        this.asteroids = [];
+    }
+    addTopAsteroid() {
+        let x = Math.floor(Math.random() * canvas.width);
+        let radius = Math.round(Math.random() * 10) + 10;
+        let speed = Math.ceil(Math.random() * 5);
+        this.asteroids.push(new Asteroid(x, 0, radius, speed));
+        console.log('addTopAsteroid '+this.asteroids.length);        
+    }
+
+    draw() {
+        //console.log('Game.draw '+this.asteroids.length);        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this.asteroids.forEach(function(obj, index, arr){
+            obj.draw();
+        });
+    }
+    setup() {
+        this.addTopAsteroid();
+        this.addTopAsteroid();
+        this.addTopAsteroid();
+    }
+    play() {
+        sketch();
+    }
+}
+let game = new Game();
+
+game.setup();
+game.play();
+
+
+
+
